@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.socket.io/socket.io-3.0.5.min.js"></script>
+    <!-- <script>
+        $(document).ready(function () {
+            var socket = io.connect();
+            $('form').submit(function () {
+                socket.emit('message', { content: $('#message').val() });
+                $('#message').val('');
+                return false;
+            });
+            socket.on('message', function (data) {
+                // $('#messages').prepend($('<li>').text(data.username + ': ' + data.content));
+                $('#messages').prepend($('<div class="post">'));
+                $('#messages .post').first().append($('<div class="author">').text(`@${data.username}`));
+                $('#messages .post').first().append($('<div class="text">').text(data.content));
+            });
+        });
+    </script> -->
+    <script>
+        $(document).ready(function () {
+            var socket = io.connect();
+            var loading = false;
+    
+            function loadMorePosts() {
+                if (!loading) {
+                    loading = true;
+                    var offset = $('#messages .post').length;
+                    $.ajax({
+                        url: '/more_posts',
+                        method: 'POST',
+                        data: { offset: offset },
+                        success: function (data) {
+                            if (data && data.posts) {
+                                for (var i = 0; i < data.posts.length; i++) {
+                                    var post = data.posts[i];
+                                    $('#messages').append($('<div class="post">'));
+                                    $('#messages .post').last().append($('<div class="author">').text('@' + post[2]));
+                                    $('#messages .post').last().append($('<div class="text">').text(post[1]));
+                                }
+                            }
+                            loading = false;
+                        },
+                        error: function () {
+                            loading = false;
+                        }
+                    });
+                }
+            }
+    
+            $('form').submit(function () {
+                socket.emit('message', { content: $('#message').val() });
+                $('#message').val('');
+                return false;
+            });
+    
+            socket.on('message', function (data) {
+                $('#messages').prepend($('<div class="post">'));
+                $('#messages .post').first().append($('<div class="author">').text('@' + data.username));
+                $('#messages .post').first().append($('<div class="text">').text(data.content));
+            });
+    
+            $(window).scroll(function () {
+                if ($(window).scrollTop() + $(window).height() >= $(document).height()) {
+                    loadMorePosts();
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="loading-text" id="loading">
+        <h1>Привет, {{ username }}</h1>
+    </div>
+
+
+    <div class="main-content" id="main">
+        <div class="content" id="messages">
+            {% for p in posts %}
+                <div class="post">
+                    <div class="author">@{{ p.2 }}</div>
+                    <div class="text">
+                        {{ p.1 | truncate(500, True, '...') }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <form>
+            <div class="up">
+                <div class="left">
+                    <div class="username">@{{ username }}</div>
+                    <a href="/logout"><div class="logout">Выйти</div></a>
+                </div>
+                <textarea class="input" name="" id="message" required placeholder="Введите текст поста..."></textarea>
+                <div class="right">
+                    <input class="submit" type="submit" value="Отправить">
+                    <a href="/about"><div class="by">chipter@by_chesnok</div></a>
+                </div>
+            </div>            
+        </form>
+
+    </div>
+</body>
+
+<script>
+    function fadeOut(element) {
+        var opacity = 1;
+        var interval = setInterval(function() {
+            if (opacity > 0) {
+                opacity -= 0.1; 
+                element.style.opacity = opacity;
+            } else {
+                clearInterval(interval);
+            }
+        }, 100);
+        
+    }
+
+    let loading = document.getElementById("loading");
+    let main = document.getElementById("main");
+    main.style.display = 'none'
+    main.style.opacity = '0'
+    loading.style.width = '100vw'
+    loading.style.height = '100vh'
+    loading.style.color = '#fff'
+    loading.style.backgroundColor = '#121212'
+    loading.style.display = 'flex'
+    loading.style.justifyContent = 'center'
+    loading.style.alignItems = 'center'
+
+
+    setTimeout(() => {
+        var opacity = 1;
+        var interval = setInterval(function() {
+            if (opacity > 0) {
+                opacity -= 0.01;
+                loading.style.opacity = opacity;
+            } else {
+                clearInterval(interval); 
+            }
+        }, 15);
+    }, 1000);
+
+    setTimeout(() => {
+        loading.style.display = 'none'
+        main.style.display = 'block'
+    }, 2500);
+
+    setTimeout(() => {
+        var opacity = 0;
+        var interval = setInterval(function() {
+            if (opacity < 1) {
+                opacity += 0.01;
+                main.style.opacity = opacity;
+            } else {
+                clearInterval(interval); 
+            }
+        }, 15);
+    }, 2500);
+</script>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;0,1000;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900;1,1000&display=swap');
+
+    textarea:focus, input:focus {
+        outline: none;
+    }
+
+    textarea, input {
+        border-width: 0px;
+        padding: 0px;
+    }
+
+    body {
+        overflow-x: hidden;
+        margin: 0px;
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+        flex-direction: column;
+        align-items: center;
+        color: #FFF;
+        font-family: 'Mulish';
+        font-size: 15px;
+        font-style: normal;
+        font-weight: 800;
+        line-height: normal;
+        background-color: #121212;
+        margin-right: -2000px;
+    }
+
+    ::placeholder, textarea {
+        color: #FFF;
+        font-family: 'Mulish';
+        font-size: 15px;
+        font-style: normal;
+        font-weight: 800;
+        line-height: normal;
+        
+    }
+
+    textarea {
+        padding-left: 20px;
+        padding-top: 10px;
+    }
+
+    .up {
+        display: flex;
+        padding: 20px 0px;
+        justify-content: center;
+        align-items: center;
+        align-content: flex-start;
+        gap: 20px;
+        /* align-self: stretch; */
+        flex-wrap: wrap;
+        background: #191919;
+        position: fixed;
+        min-width: 100vw;
+        top: calc(100vh - 140px);
+        left: 0;
+    }
+
+    .left {
+        display: flex;
+        height: 100px;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .username {
+        display: flex;
+        height: 45px;
+        padding-left: 40px;
+        padding-right: 40px;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        border-radius: 20px;
+        background: #121212;
+    }
+
+    .logout {
+        display: flex;
+        height: 45px;
+        padding-left: 40px;
+        padding-right: 40px;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        align-self: stretch;
+        border-radius: 20px;
+        background: #121212;
+    }
+
+    a {
+        text-decoration: none;
+    }
+
+    a .by {
+        color: #FFF;
+    }
+
+    a .logout {
+        text-decoration: none;
+        color: #FFF;
+    }
+
+    .input {
+        display: flex;
+        height: 90px;
+        width: 380px;
+        max-width: 380px;
+        max-height: 90px;
+        border-radius: 20px 20px 0px 20px;
+        background: #5383FF;
+    }
+
+    .right {
+        display: flex;
+        height: 100px;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .submit {
+        display: flex;
+        height: 45px;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        align-self: stretch;
+        border-radius: 20px;
+        background: #5383FF;
+        font-family: 'Mulish';
+        font-size: 15px;
+        font-style: normal;
+        font-weight: 800;
+        line-height: normal;
+        color: #FFF;
+    }
+
+    .by {
+        display: flex;
+        height: 45px;
+        padding-left: 40px;
+        padding-right: 40px;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        border-radius: 20px;
+        background: #121212;
+    }
+
+    .content {
+        display: flex;
+        padding-top: 10px;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        flex: 1 0 0;
+    }
+
+    .post {
+        display: flex;
+        width: 500px;
+        min-width: 500px;
+        min-height: 100px;
+        padding: 10px 10px 10px 10px;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        border-radius: 20px;
+        background: #191919;
+    }
+
+    .text {
+        max-width: 400px;
+        word-wrap: break-word;
+    }
+</style>
+
+
+
+
+</html>
