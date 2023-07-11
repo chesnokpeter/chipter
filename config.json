@@ -4,5 +4,6 @@
         "user" : "root",
         "password" : "",
         "database" : "socialnet"
-    }
+    },
+    "secretKey" : "vkjsdogik3h5lkjgh3lwkkfhjlkjhbk4"
 }

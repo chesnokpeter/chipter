@@ -6,9 +6,10 @@ from server.toolsdb import get_id_from_user
 from server.reg import registration
 from server.login import logging
 from server.posts import get_all_posts, send_post
+from server.password_hash import hashed, dehashed
 
 app = Flask(__name__, template_folder='./website', static_folder='./website/static')
-app.config['SECRET_KEY'] = 'vkjsdogik3h5lkjgh3lwkkfhjlkjhbk4'
+
 
 socketio = SocketIO(app)
 
@@ -21,6 +22,7 @@ def register():
         a = get_id_from_user(username, conn)
         if a:
             return render_template('reg.html', error='Такой ник уже существует')
+        password = hashed(password)
         registration(username, password, conn, cfg)
         session['username'] = username
         return redirect(url_for('home'))
@@ -33,7 +35,8 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        a = logging(username, password, conn, cfg)
+        hashed = logging(username, conn, cfg)
+        a = dehashed(password, hashed)
         if not a:
             return render_template('login.html', error='Логин или пароль неправильные')
         else:
@@ -47,6 +50,9 @@ def login():
 def home():
     if 'username' in session:
         username = session['username']
+        a = get_id_from_user(username, conn)
+        if not a:
+            return redirect(url_for('login'))
         posts = get_all_posts(conn, cfg)
         return render_template('home.html', username=username, posts=posts)
     else:
@@ -81,10 +87,11 @@ if __name__ == '__main__':
 
     with open('config.json', 'r') as f:
         cfg = json.loads(f.read())
+    app.config['SECRET_KEY'] = cfg['secretKey']
     conn = mysql.connector.connect(
         host=cfg['mysql']['host'],
         user=cfg['mysql']['user'],
         password=cfg['mysql']['password'],
         database=cfg['mysql']['database']
     )
-    socketio.run(app, port=9999, log_output=True)
+    socketio.run(app, port=9999, host='192.168.202.33', log_output=True)

@@ -19,10 +19,10 @@
 
 
 
-def logging(username, password, conn, cfg):
+def logging(username, conn, cfg):
     cur = conn.cursor()
-    cur.execute('SELECT * FROM `user` WHERE `username` = %s AND `password` = %s',
-                (username, password))
+    cur.execute('SELECT * FROM `user` WHERE `username` = %s',
+                [username])
     a = cur.fetchone()
     cur.close()
-    return a
+    return a[2]
