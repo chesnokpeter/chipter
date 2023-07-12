@@ -35,6 +35,9 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        a = get_id_from_user(username, conn)
+        if not a:
+            return render_template('login.html', error='Логин или пароль неправильные')
         hashed = logging(username, conn, cfg)
         a = dehashed(password, hashed)
         if not a:
@@ -54,7 +57,7 @@ def home():
         if not a:
             return redirect(url_for('login'))
         posts = get_all_posts(conn, cfg)
-        return render_template('home.html', username=username, posts=posts)
+        return render_template('homenew.html', username=username, posts=posts)
     else:
         return redirect(url_for('login'))
 
@@ -94,4 +97,4 @@ if __name__ == '__main__':
         password=cfg['mysql']['password'],
         database=cfg['mysql']['database']
     )
-    socketio.run(app, port=9999, host='192.168.202.33', log_output=True)
+    socketio.run(app, port=9999, log_output=True)

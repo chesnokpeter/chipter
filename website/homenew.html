@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.socket.io/socket.io-3.0.5.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            var socket = io.connect();
+            var loading = false;
+    
+            function loadMorePosts() {
+                if (!loading) {
+                    loading = true;
+                    var offset = $('#messages .post').length;
+                    $.ajax({
+                        url: '/more_posts',
+                        method: 'POST',
+                        data: { offset: offset },
+                        success: function (data) {
+                            if (data && data.posts) {
+                                for (var i = 0; i < data.posts.length; i++) {
+                                    var post = data.posts[i];
+                                    $('#messages').append($('<div class="post">'));
+                                    $('#messages .post').last().append($('<div class="author">').text('@' + post[2]));
+                                    $('#messages .post').last().append($('<div class="text">').text(post[1]));
+                                }
+                            }
+                            loading = false;
+                        },
+                        error: function () {
+                            loading = false;
+                        }
+                    });
+                }
+            }
+    
+            $('form').submit(function () {
+                socket.emit('message', { content: $('#message').val() });
+                $('#message').val('');
+                return false;
+            });
+    
+            socket.on('message', function (data) {
+                $('#messages').prepend($('<div class="post">'));
+                $('#messages .post').first().append($('<div class="author">').text('@' + data.username));
+                $('#messages .post').first().append($('<div class="text">').text(data.content));
+            });
+    
+            $(window).scroll(function () {
+                if ($(window).scrollTop() + $(window).height() >= $(document).height()) {
+                    loadMorePosts();
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="loading-text" id="loading">
+        <h1>Привет, {{ username }}</h1>
+    </div>
+
+
+    <div class="main-content" id="main">
+        <div class="content" id="messages">
+            {% for p in posts %}
+                <div class="post">
+                    <div class="author">@{{ p.2 }}</div>
+                    <div class="text">
+                        {{ p.1 | truncate(500, True, '...') }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <form>
+            <div class="up">
+                <textarea class="input" name="" id="message" required placeholder="Введите текст поста..."></textarea>
+                <input class="submit" type="submit" value="Отправить">
+                <div class="bottom">
+                    <div class="author-panel">
+                        <a href=""><div class="author">@{{ username }}</div></a>
+                        <a href="/logout"><div class="logout">Выйти</div></a>
+                    </div>
+                    <a href="/about"><div class="by">chipter@by_chesnok</div></a>
+                </div>
+            </div>            
+        </form>
+
+    </div>
+</body>
+
+<script>
+    function fadeOut(element) {
+        var opacity = 1;
+        var interval = setInterval(function() {
+            if (opacity > 0) {
+                opacity -= 0.1; 
+                element.style.opacity = opacity;
+            } else {
+                clearInterval(interval);
+            }
+        }, 100);
+        
+    }
+
+    let loading = document.getElementById("loading");
+    let main = document.getElementById("main");
+    main.style.width = '100vw'
+    main.style.height = '100vh'
+    main.style.display = 'none'
+    main.style.opacity = '0'
+    loading.style.width = '100vw'
+    loading.style.height = '100vh'
+    loading.style.color = '#fff'
+    loading.style.backgroundColor = '#121212'
+    loading.style.display = 'flex'
+    loading.style.justifyContent = 'center'
+    loading.style.alignItems = 'center'
+
+
+    setTimeout(() => {
+        var opacity = 1;
+        var interval = setInterval(function() {
+            if (opacity > 0) {
+                opacity -= 0.01;
+                loading.style.opacity = opacity;
+            } else {
+                clearInterval(interval); 
+            }
+        }, 15);
+    }, 1000);
+
+    setTimeout(() => {
+        loading.style.display = 'none'
+        main.style.display = 'flex'
+    }, 2500);
+
+    setTimeout(() => {
+        var opacity = 0;
+        var interval = setInterval(function() {
+            if (opacity < 1) {
+                opacity += 0.01;
+                main.style.opacity = opacity;
+            } else {
+                clearInterval(interval); 
+            }
+        }, 15);
+    }, 2500);
+</script>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;0,1000;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900;1,1000&display=swap');
+
+    a {
+        text-decoration: none;
+        color: #FFF;
+    }
+
+    body {
+        box-sizing: border-box;
+        margin: 0px;
+        color: #FFF;
+        font-family: 'Mulish';
+        font-size: 15px;
+        font-style: normal;
+        font-weight: 800;
+        line-height: normal;
+        background-color: #121212;
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        overflow-x: hidden;
+    }
+    textarea:focus, input:focus {
+        outline: none;
+    }
+
+    textarea, input {
+        border-width: 0px;
+        padding: 0px;
+    }
+
+
+    ::placeholder, textarea {
+        color: #FFF;
+        font-family: 'Mulish';
+        font-size: 15px;
+        font-style: normal;
+        font-weight: 800;
+        line-height: normal;
+    }
+
+    textarea {
+        padding-left: 20px;
+        padding-top: 10px;
+    }
+
+    .content {
+        display: flex;
+        padding: 10px 0px;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        flex: 1 0 0;
+        width: 100vw;
+        height: 100vh;
+    }
+
+    .up {
+        display: flex;
+        padding: 20px 0px;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        /* align-self: stretch; */
+        background: rgba(25, 25, 25, 0.50);
+        backdrop-filter: blur(7.5px);
+        width: 100vw;
+        position: fixed;
+        top: calc(100vh - 254px);
+        left: 0;
+    }
+
+    .input {
+        height: 100px;
+        width: 300px;
+        border-radius: 20px;
+        background: #5383FF;
+    }
+
+    .submit {
+        display: flex;
+        height: 45px;
+        padding: 10px 40px;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        align-self: stretch;
+        background: #5383FF;
+        width: 100vw;
+        color: #FFF;
+        font-family: 'Mulish';
+        font-size: 15px;
+        font-style: normal;
+        font-weight: 800;
+        line-height: normal;
+    }
+
+    .bottom {
+        display: flex;
+        padding: 0px 100px;
+        justify-content: center;
+        align-items: flex-start;
+        align-content: flex-start;
+        gap: 20px;
+        align-self: stretch; 
+        flex-wrap: wrap;
+    }
+
+    .author-panel {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        align-content: flex-start;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+
+    .post {
+        /* display: flex;
+        max-width: 300px;
+        min-width: 300px;
+        min-height: 100px;
+        padding: 10px 10px 20px 10px;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        border-radius: 20px;
+        background: #191919;
+        align-self: stretch; */
+        display: flex;
+        width: 300px;
+        min-width: 300px;
+        /* min-height: 100px; */
+        padding: 10px 10px 20px 10px;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        border-radius: 20px;
+        background: #191919;
+    }
+
+    .text {
+        max-width: 300px;
+        word-wrap: break-word;
+    }
+
+    @media (max-width: 523px) {
+        .up {
+            top: calc(100vh - 293px);
+        }
+    }
+
+
+</style>
+
+
+
+
+</html>
