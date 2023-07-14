@@ -8,7 +8,7 @@
     <script src="https://cdn.socket.io/socket.io-3.0.5.min.js"></script>
     <script>
         $(document).ready(function () {
-            var socket = io.connect();
+            var socket = io.connect('/home');
             var loading = false;
     
             function loadMorePosts() {
@@ -25,7 +25,7 @@
                                     var post = data.posts[i];
                                     $('#messages').append($('<div class="post">'));
                                     $('#messages .post').last().append($('<div class="author">').text('@' + post[2]));
-                                    $('#messages .post').last().append($('<div class="text">').text(post[1]));
+                                    $('#messages .post').last().append($(`<a href='/post${post[0]}'>`).text(post[1].substring(0, 500) + (post[1].length > 500 ? '...' : '')));
                                 }
                             }
                             loading = false;
@@ -46,7 +46,7 @@
             socket.on('message', function (data) {
                 $('#messages').prepend($('<div class="post">'));
                 $('#messages .post').first().append($('<div class="author">').text('@' + data.username));
-                $('#messages .post').first().append($('<div class="text">').text(data.content));
+                $('#messages .post').first().append($(`<a href='/post${data.id}'>`).text(data.content.substring(0, 500) + (data.content.length > 500 ? '...' : '')));
             });
     
             $(window).scroll(function () {
@@ -68,9 +68,9 @@
             {% for p in posts %}
                 <div class="post">
                     <div class="author">@{{ p.2 }}</div>
-                    <div class="text">
+                    <a href="/post{{ p.0 }}">
                         {{ p.1 | truncate(500, True, '...') }}
-                    </div>
+                    </a>
                 </div>
             {% endfor %}
         </div>
@@ -156,6 +156,8 @@
     a {
         text-decoration: none;
         color: #FFF;
+        max-width: 300px;
+        word-wrap: break-word;
     }
 
     body {
@@ -272,17 +274,7 @@
     }
 
     .post {
-        /* display: flex;
-        max-width: 300px;
-        min-width: 300px;
-        min-height: 100px;
-        padding: 10px 10px 20px 10px;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-        border-radius: 20px;
-        background: #191919;
-        align-self: stretch; */
+
         display: flex;
         width: 300px;
         min-width: 300px;
@@ -290,9 +282,10 @@
         padding: 10px 10px 20px 10px;
         flex-direction: column;
         align-items: center;
-        gap: 10px;
+        /* gap: 10px; */
         border-radius: 20px;
         background: #191919;
+        white-space: pre-line;
     }
 
     .text {
@@ -305,6 +298,8 @@
             top: calc(100vh - 293px);
         }
     }
+
+
 
 
 </style>
